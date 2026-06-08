@@ -1,0 +1,7 @@
+streamlit
+google-genai
+pillow
+opencv-python-headless
+numpy
+python-dotenv
+pygame
