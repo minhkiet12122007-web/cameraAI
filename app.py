@@ -1,4 +1,4 @@
-# -*- coding: utf-8 --
+# -*- coding: utf-8 -*-
 import os
 import sys
 import time
@@ -90,6 +90,8 @@ def call_gemini_vision_api(image):
 # --- XỬ LÝ KẾT QUẢ KHI CÓ ẢNH ---
 if img_file_buffer is not None:
     pil_image = Image.open(img_file_buffer)
+    st.image(pil_image, caption="Ảnh thực phẩm đã chụp",
+             use_container_width=True)
 
     with st.spinner("⏳ AI ĐANG KIỂM ĐỊNH & LÊN THỰC ĐƠN THEO MÙA..."):
         ai_result = call_gemini_vision_api(pil_image)
