@@ -9,7 +9,7 @@ import cv2
 import streamlit as st
 import sys
 import os
-from dotenv import load_dotenv
+from dotenv import load_model, load_dotenv
 
 # Tải cấu hình bảo mật từ file .env
 load_dotenv()
