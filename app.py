@@ -10,8 +10,6 @@ import streamlit as st
 from google import genai
 from google.genai.errors import APIError
 from dotenv import load_dotenv
-# Import thư viện camera live tự động
-from camera_input_live import camera_input_live
 
 # Tải cấu hình bảo mật từ file .env (Nếu chạy local)
 load_dotenv()
@@ -45,12 +43,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🤖 AI FOOD SCANNER - PHIÊN BẢN WEB")
-st.write("Vui lòng cấp quyền truy cập camera. Đưa thực phẩm trước ống kính và nhấn nút kiểm định.")
-
-# --- KHU VỰC CAMERA TỰ ĐỘNG LÊN HÌNH ---
-st.subheader("📸 Camera Trực Tuyến")
-# Tự động kích hoạt camera ngay khi mở trang, không cần bấm nút mồi
-image_data = camera_input_live(show_controls=False, key="food_cam")
+st.write("Vui lòng cấp quyền truy cập camera, chụp ảnh thực phẩm và hệ thống sẽ tự động phân tích.")
 
 
 def call_gemini_vision_api(image):
@@ -62,7 +55,6 @@ def call_gemini_vision_api(image):
         current_time_str = now.strftime("%d/%m/%Y")
         current_month = now.month
 
-        # Đồng bộ Prompt chuẩn từ bản Desktop sang Web để kết quả trả về hay và thực tế hơn
         prompt = (
             f"Bạn là một chuyên gia kiểm định thực phẩm kiêm đầu bếp chuyên nghiệp tại Việt Nam.\n"
             f"Hôm nay là ngày: {current_time_str} (Đang là Tháng {current_month}).\n\n"
@@ -103,35 +95,34 @@ def call_gemini_vision_api(image):
         return f"❌ Lỗi khởi tạo client:\n{str(e)}"
 
 
-# --- XỬ LÝ KHI NGƯỜI DÙNG BẤM PHÂN TÍCH ---
-if image_data:
-    pil_image = Image.open(image_data)
+# --- KHU VỰC CAMERA CHÍNH CHỦ STREAMLIT ---
+st.subheader("📸 Camera Trực Tuyến")
 
-    # Tạo nút quét lớn, bấm phát ăn ngay giống cơ chế app mobile thật
-    if st.button("🚀 BẮT ĐẦU KIỂM ĐỊNH AI"):
+# st.camera_input cung cấp nút chụp chuyên nghiệp, hoạt động mượt trên cả iOS/Android
+image_file = st.camera_input("Đưa thực phẩm vào khung hình bên dưới")
+
+# --- XỬ LÝ KHI CÓ ẢNH CHỤP ---
+if image_file is not None:
+    # Mở ảnh bằng Pillow
+    pil_image = Image.open(image_file)
+
+    st.markdown('<p class="status-process">⏳ AI ĐANG KIỂM ĐỊNH & LÊN THỰC ĐƠN... VUI LÒNG ĐỢI</p>',
+                unsafe_allow_html=True)
+
+    with st.spinner("Đang tính toán cùng Gemini..."):
+        ai_result = call_gemini_vision_api(pil_image)
+
+    # Hiển thị kết quả
+    st.markdown("### 📋 KẾT QUẢ PHÂN TÍCH TỪ AI:")
+    st.info(ai_result)
+
+    # Cảnh báo màu sắc thông minh dựa trên từ khóa kết quả
+    if "❌" in ai_result:
         st.markdown(
-            '<p class="status-process">⏳ AI ĐANG KIỂM ĐỊNH & LÊN THỰC ĐƠN... VUI LÒNG ĐỢI</p>', unsafe_allow_html=True)
-
-        # Hiển thị lại frame ảnh tĩnh lúc bấm nút để người dùng biết AI đang xử lý ảnh nào
-        st.image(pil_image, caption="Ảnh thực phẩm đang phân tích",
-                 use_container_width=True)
-
-        with st.spinner("Đang tính toán..."):
-            ai_result = call_gemini_vision_api(pil_image)
-
-        # Hiển thị kết quả
-        st.markdown("### 📋 KẾT QUẢ PHÂN TÍCH TỪ AI:")
-        st.info(ai_result)
-
-        # Cảnh báo màu sắc thông minh dựa trên từ khóa kết quả
-        if "❌" in ai_result:
-            st.markdown(
-                '<p class="status-warn">❌ LỖI HỆ THỐNG - VUI LÒNG THỬ LẠI</p>', unsafe_allow_html=True)
-        elif any(word in ai_result.upper() for word in ["BẨN", "HỎNG", "ÔI", "THIU", "MỐC", "ĐỘC"]):
-            st.markdown(
-                '<p class="status-warn">⚠️ CẢNH BÁO: THỰC PHẨM CÓ DẤU HIỆU KHÔNG AN TOÀN!</p>', unsafe_allow_html=True)
-        else:
-            st.markdown(
-                '<p class="status-good">✅ THỰC PHẨM ĐẠT TIÊU CHUẨN AN TOÀN</p>', unsafe_allow_html=True)
-else:
-    st.warning("📷 Đang chờ luồng dữ liệu từ camera. Vui lòng đảm bảo bạn đã bấm 'Allow' (Cho phép) trên trình duyệt điện thoại.")
+            '<p class="status-warn">❌ LỖI HỆ THỐNG - VUI LÒNG THỬ LẠI</p>', unsafe_allow_html=True)
+    elif any(word in ai_result.upper() for word in ["BẨN", "HỎNG", "ÔI", "THIU", "MỐC", "ĐỘC"]):
+        st.markdown(
+            '<p class="status-warn">⚠️ CẢNH BÁO: THỰC PHẨM CÓ DẤU HIỆU KHÔNG AN TOÀN!</p>', unsafe_allow_html=True)
+    else:
+        st.markdown(
+            '<p class="status-good">✅ THỰC PHẨM ĐẠT TIÊU CHUẨN AN TOÀN</p>', unsafe_allow_html=True)
