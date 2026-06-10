@@ -1,0 +1,8 @@
+[server]
+# Vô hiệu hóa CORS và XSRF để tránh xung đột chặn quyền truy cập thiết bị ngoại vi trên mobile
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+# Đảm bảo Streamlit gửi đúng header yêu cầu quyền camera xuống trình duyệt di động
+gatherUsageStats = false
