@@ -11,22 +11,34 @@ def show_mobile(call_gemini_vision_api):
         .main { background-color: #121212; color: #FFFFFF; }
         .mobile-title { color: #2979FF; font-size: 24px !important; text-align: center; font-weight: bold; margin-bottom: 0px; }
         
-        /* NÚT ĐỔI GIAO DIỆN TRÊN MOBILE: To, cao, rõ chữ, dễ chạm trúng */
-        /* NÚT ĐỔI GIAO DIỆN TRÊN MOBILE: To, cao, rõ chữ, dễ chạm trúng */
-div.stButton > button {
-    height: 55px !important;
-    width: 100% !important;
-    background-color: #1E1E1E !important; /* Màu nền nút */
-    border: 2px solid #2979FF !important;
-    border-radius: 10px !important;
+        /* TÙY CHỈNH NÚT ĐỔI GIAO DIỆN TRÊN MOBILE */
+div.stButton {
+    display: flex;
+    justify-content: center;
     margin-bottom: 15px !important;
 }
 
-/* Đảm bảo chữ bên trong nút luôn hiển thị rõ màu xanh */
+div.stButton > button {
+    height: 55px !important;
+    width: 100% !important;
+    background-color: #1E1E1E !important;
+    border: 2px solid #2979FF !important;
+    border-radius: 10px !important;
+    transition: all 0.3s ease;
+}
+
+/* Đảm bảo chữ hiển thị to rõ, đúng màu */
 div.stButton > button p, div.stButton > button span {
     color: #2979FF !important;
     font-size: 16px !important;
     font-weight: bold !important;
+}
+
+/* Xóa bỏ cái khung viền focus màu xanh bị lỗi lơ lửng ở góc trái */
+div.stButton > button:focus, div.stButton > button:active {
+    box-shadow: none !important;
+    outline: none !important;
+    border-color: #2979FF !important;
 }
         
         /* CAMERA TRÊN MOBILE: Bung hết chiều ngang, tăng chiều cao trục dọc */
@@ -57,13 +69,18 @@ div.stButton > button p, div.stButton > button span {
         </style>
     """, unsafe_allow_html=True)
 
-    if st.button("🔄 Đổi giao diện thiết bị", key="mobile_switch"):
-        st.session_state.device_layout = None
-        st.rerun()
 
-    st.markdown("<h1 class='mobile-title'>🤖 AI FOOD SCANNER - MOBILE</h1>",
-                unsafe_allow_html=True)
-    st.write("<p style='text-align: center; font-size: 13px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>", unsafe_allow_html=True)
+    # 1. Hiện tiêu đề trước[cite: 1]
+st.markdown("<h1 class='mobile-title'>🤖 AI FOOD SCANNER - MOBILE</h1>",
+            unsafe_allow_html=True)
+st.write("<p style='text-align: center; font-size: 13px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>",
+         unsafe_allow_html=True)
+
+# 2. Hiện nút đổi giao diện ngay dưới tiêu đề[cite: 1]
+if st.button("🔄 Đổi giao diện thiết bị", key="mobile_switch"):
+
+    st.session_state.device_layout = None
+    st.rerun()
 
     st.subheader("📸 Quét Thực Phẩm")
     image_file = st.camera_input("Chạm để chụp thực phẩm")
