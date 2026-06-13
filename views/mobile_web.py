@@ -12,17 +12,22 @@ def show_mobile(call_gemini_vision_api):
         .mobile-title { color: #2979FF; font-size: 24px !important; text-align: center; font-weight: bold; margin-bottom: 0px; }
         
         /* NÚT ĐỔI GIAO DIỆN TRÊN MOBILE: To, cao, rõ chữ, dễ chạm trúng */
-        div.stButton > button {
-            height: 55px !important;
-            width: 100% !important;
-            font-size: 16px !important;
-            font-weight: bold !important;
-            color: #2979FF !important;
-            background-color: #1E1E1E !important;
-            border: 2px solid #2979FF !important;
-            border-radius: 10px !important;
-            margin-bottom: 15px !important;
-        }
+        /* NÚT ĐỔI GIAO DIỆN TRÊN MOBILE: To, cao, rõ chữ, dễ chạm trúng */
+div.stButton > button {
+    height: 55px !important;
+    width: 100% !important;
+    background-color: #1E1E1E !important; /* Màu nền nút */
+    border: 2px solid #2979FF !important;
+    border-radius: 10px !important;
+    margin-bottom: 15px !important;
+}
+
+/* Đảm bảo chữ bên trong nút luôn hiển thị rõ màu xanh */
+div.stButton > button p, div.stButton > button span {
+    color: #2979FF !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+}
         
         /* CAMERA TRÊN MOBILE: Bung hết chiều ngang, tăng chiều cao trục dọc */
         div[data-testid="stCameraInput"] {
