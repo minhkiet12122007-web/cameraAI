@@ -1,4 +1,3 @@
-# mobile_web.py
 import streamlit as st
 from PIL import Image
 
@@ -12,34 +11,34 @@ def show_mobile(call_gemini_vision_api):
         .mobile-title { color: #2979FF; font-size: 24px !important; text-align: center; font-weight: bold; margin-bottom: 0px; }
         
         /* TÙY CHỈNH NÚT ĐỔI GIAO DIỆN TRÊN MOBILE */
-div.stButton {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 15px !important;
-}
+        div.stButton {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px !important;
+        }
 
-div.stButton > button {
-    height: 55px !important;
-    width: 100% !important;
-    background-color: #1E1E1E !important;
-    border: 2px solid #2979FF !important;
-    border-radius: 10px !important;
-    transition: all 0.3s ease;
-}
+        div.stButton > button {
+            height: 55px !important;
+            width: 100% !important;
+            background-color: #1E1E1E !important;
+            border: 2px solid #2979FF !important;
+            border-radius: 10px !important;
+            transition: all 0.3s ease;
+        }
 
-/* Đảm bảo chữ hiển thị to rõ, đúng màu */
-div.stButton > button p, div.stButton > button span {
-    color: #2979FF !important;
-    font-size: 16px !important;
-    font-weight: bold !important;
-}
+        /* Đảm bảo chữ hiển thị to rõ, đúng màu */
+        div.stButton > button p, div.stButton > button span {
+            color: #2979FF !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+        }
 
-/* Xóa bỏ cái khung viền focus màu xanh bị lỗi lơ lửng ở góc trái */
-div.stButton > button:focus, div.stButton > button:active {
-    box-shadow: none !important;
-    outline: none !important;
-    border-color: #2979FF !important;
-}
+        /* Xóa bỏ cái khung viền focus màu xanh bị lỗi lơ lửng ở góc trái */
+        div.stButton > button:focus, div.stButton > button:active {
+            box-shadow: none !important;
+            outline: none !important;
+            border-color: #2979FF !important;
+        }
         
         /* CAMERA TRÊN MOBILE: Bung hết chiều ngang, tăng chiều cao trục dọc */
         div[data-testid="stCameraInput"] {
@@ -69,19 +68,17 @@ div.stButton > button:focus, div.stButton > button:active {
         </style>
     """, unsafe_allow_html=True)
 
+    # 1. Hiện tiêu đề trước (đã thụt lề vào trong hàm)
+    st.markdown("<h1 class='mobile-title'>🤖 AI FOOD SCANNER - MOBILE</h1>",
+                unsafe_allow_html=True)
+    st.write("<p style='text-align: center; font-size: 13px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>", unsafe_allow_html=True)
 
-    # 1. Hiện tiêu đề trước[cite: 1]
-st.markdown("<h1 class='mobile-title'>🤖 AI FOOD SCANNER - MOBILE</h1>",
-            unsafe_allow_html=True)
-st.write("<p style='text-align: center; font-size: 13px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>",
-         unsafe_allow_html=True)
+    # 2. Hiện nút đổi giao diện ngay dưới tiêu đề
+    if st.button("🔄 Đổi giao diện thiết bị", key="mobile_switch"):
+        st.session_state.device_layout = None
+        st.rerun()
 
-# 2. Hiện nút đổi giao diện ngay dưới tiêu đề[cite: 1]
-if st.button("🔄 Đổi giao diện thiết bị", key="mobile_switch"):
-
-    st.session_state.device_layout = None
-    st.rerun()
-
+    # 3. Phần camera và quét thực phẩm (nằm ngoài khối lệnh if bên trên để luôn hiển thị công khai)
     st.subheader("📸 Quét Thực Phẩm")
     image_file = st.camera_input("Chạm để chụp thực phẩm")
 
