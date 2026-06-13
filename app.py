@@ -4,17 +4,19 @@ import sys
 import time
 from datetime import datetime
 from PIL import Image
-import numpy as np
-import cv2
 import streamlit as st
 from google import genai
 from google.genai.errors import APIError
 from dotenv import load_dotenv
 
+# Import giao diện chuẩn từ 2 file bạn đã tách
+# Import giao diện chuẩn từ thư mục views
+from views.desktop_web import show_desktop
+from views.mobile_web import show_mobile
 # Tải cấu hình bảo mật từ file .env
 load_dotenv()
 
-# Lấy API Key từ biến môi trường một cách an toàn
+# Lấy API Key từ biến môi trường
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
@@ -29,13 +31,13 @@ st.set_page_config(
     layout="wide",
 )
 
-# Khởi tạo trạng thái chọn thiết bị
+# Khởi tạo trạng thái chọn thiết bị của người dùng
 if "device_layout" not in st.session_state:
     st.session_state.device_layout = None
 
 
 def call_gemini_vision_api(image, prompt_mode="desktop"):
-    """Gọi API Gemini Vision để phân tích chất lượng thực phẩm."""
+    """Hàm xử lý gọi API Gemini Vision (Được truyền sang các file giao diện)"""
     try:
         client = genai.Client(api_key=GEMINI_API_KEY)
     except Exception as e:
@@ -99,7 +101,7 @@ def call_gemini_vision_api(image, prompt_mode="desktop"):
 
 
 # ========================================================
-# MÀN HÌNH ĐIỀU HƯỚNG CHỌN GIAO DIỆN (BAN ĐẦU)
+# MÀN HÌNH CHỌN THIẾT BỊ BAN ĐẦU
 # ========================================================
 if st.session_state.device_layout is None:
     st.markdown("""
@@ -129,166 +131,11 @@ if st.session_state.device_layout is None:
             st.session_state.device_layout = "mobile"
             st.rerun()
 
-
 # ========================================================
-# SAU KHI ĐÃ CHỌN GIAO DIỆN THIẾT BỊ
+# ĐIỀU HƯỚNG GIAO DIỆN VÀ TRUYỀN HÀM XỬ LÝ API
 # ========================================================
 else:
-    # ----------------------------------------------------
-    # KIỂU A: GIAO DIỆN MÁY TÍNH (LAPTOP) - CAMERA VỪA VẶN ĐẸP MẮT
-    # ----------------------------------------------------
     if st.session_state.device_layout == "desktop":
-        st.markdown("""
-            <style>
-            .main { background-color: #121212; color: #FFFFFF; }
-            h1 { color: #2979FF; font-family: 'Arial'; text-align: center; }
-            .status-good { color: #00E676; font-weight: bold; font-size: 18px; text-align: center; margin-top: 10px; }
-            .status-warn { color: #FF1744; font-weight: bold; font-size: 18px; text-align: center; margin-top: 10px; }
-            .status-process { color: #FFB300; font-weight: bold; font-size: 18px; text-align: center; margin-top: 10px; }
-            
-            /* Bọc CSS riêng cho khu vực Laptop tránh đè sang Mobile */
-            .desktop-container div.stButton > button {
-                background-color: #1E1E1E !important; color: #2979FF !important; border: 1px solid #2979FF !important;
-                border-radius: 8px !important; width: auto !important; padding: 5px 20px !important; height: 42px !important; font-size: 15px !important;
-            }
-            
-            /* CAMERA LAPTOP: Tăng kích thước vừa vặn tầm nhìn (800px) */
-            .desktop-container div[data-testid="stCameraInput"] {
-                max-width: 800px !important;
-                margin: 0 auto !important;
-            }
-            .desktop-container div[data-testid="stCameraInput"] button {
-                background-color: #2979FF !important; color: white !important; border-radius: 8px !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-
-        # Toàn bộ nội dung bọc trong div class="desktop-container"
-        st.markdown('<div class="desktop-container">', unsafe_allow_html=True)
-
-        if st.button("🔄 Đổi giao diện thiết bị", key="desktop_switch"):
-            st.session_state.device_layout = None
-            st.rerun()
-
-        st.title("🤖 AI FOOD SCANNER - PHIÊN BẢN WEB")
-        st.write("<p style='text-align: center;'>Vui lòng cấp quyền truy cập camera, chụp ảnh thực phẩm và hệ thống sẽ tự động phân tích.</p>", unsafe_allow_html=True)
-
-        st.subheader("📸 Camera Trực Tuyến")
-        image_file = st.camera_input("Đưa thực phẩm vào khung hình bên dưới")
-
-        if image_file is not None:
-            pil_image = Image.open(image_file)
-            st.markdown(
-                '<p class="status-process">⏳ AI ĐANG KIỂM ĐỊNH & LÊN THỰC ĐƠN... VUI LÒNG ĐỢI</p>', unsafe_allow_html=True)
-            with st.spinner("Đang tính toán cùng Gemini..."):
-                ai_result = call_gemini_vision_api(
-                    pil_image, prompt_mode="desktop")
-
-            st.markdown("### 📋 KẾT QUẢ PHÂN TÍCH TỪ AI:")
-            st.info(ai_result)
-            if "❌" in ai_result:
-                st.markdown(
-                    '<p class="status-warn">❌ LỖI HỆ THỐNG - VUI LÒNG THỬ LẠI</p>', unsafe_allow_html=True)
-            elif any(word in ai_result.upper() for word in ["BẨN", "HỎNG", "ÔI", "THIU", "MỐC", "ĐỘC"]):
-                st.markdown(
-                    '<p class="status-warn">⚠️ CẢNH BÁO: THỰC PHẨM CÓ DẤU HIỆU KHÔNG AN TOÀN!</p>', unsafe_allow_html=True)
-            else:
-                st.markdown(
-                    '<p class="status-good">✅ THỰC PHẨM ĐẠT TIÊU CHUẨN AN TOÀN</p>', unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # ----------------------------------------------------
-    # KIỂU B: GIAO DIỆN ĐIỆN THOẠI (MOBILE) - FIX LỖI NÚT TO & CAMERA CAO ĐỨNG
-    # ----------------------------------------------------
+        show_desktop(call_gemini_vision_api)
     elif st.session_state.device_layout == "mobile":
-        st.markdown("""
-            <style>
-            [data-testid="stAppViewContainer"] { padding-left: 8px !important; padding-right: 8px !important; }
-            .block-container { padding-top: 0.5rem !important; padding-bottom: 1rem !important; }
-            .main { background-color: #121212; color: #FFFFFF; }
-            
-            .mobile-title { color: #2979FF; font-size: 24px !important; text-align: center; font-weight: bold; margin-bottom: 0px; }
-            
-            /* FIX NÚT ĐỔI GIAO DIỆN MOBILE: Độc lập hoàn toàn, to, rõ chữ, cao ráo */
-            .mobile-box .mobile-btn-wrapper div.stButton > button {
-                height: 55px !important;
-                width: 90% !important;
-                font-size: 16px !important;
-                font-weight: bold !important;
-                color: #2979FF !important;
-                background-color: #1E1E1E !important;
-                border: 2px solid #2979FF !important;
-                border-radius: 10px !important;
-                display: block !important;
-                margin: 0 auto 15px auto !important;
-            }
-            
-            /* CAMERA TRÊN MOBILE: Bung 100% chiều ngang, tăng chiều cao tối thiểu lên 480px */
-            .mobile-box div[data-testid="stCameraInput"] {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0px !important;
-                padding: 0px !important;
-            }
-            .mobile-box div[data-testid="stCameraInput"] video {
-                object-fit: cover !important;
-                min-height: 480px !important; /* Camera đứng cực kì cao ráo, rõ nét */
-                border-radius: 14px !important;
-            }
-            .mobile-box div[data-testid="stCameraInput"] > div {
-                border: 2.5px solid #2979FF !important;
-                border-radius: 16px !important;
-            }
-            
-            /* Nút chụp ảnh bên trong cụm camera mobile */
-            .mobile-box div[data-testid="stCameraInput"] button {
-                background-color: #2979FF !important; color: white !important;
-                border-radius: 8px !important; width: 100% !important;
-                font-weight: bold !important; height: 50px !important; font-size: 16px !important;
-            }
-            
-            .status-good { color: #00E676; font-weight: bold; font-size: 15px; text-align: center; margin-top: 10px; }
-            .status-warn { color: #FF1744; font-weight: bold; font-size: 15px; text-align: center; margin-top: 10px; }
-            .status-process { color: #FFB300; font-weight: bold; font-size: 15px; text-align: center; margin-top: 10px; }
-            </style>
-            """, unsafe_allow_html=True)
-
-        # Toàn bộ nội dung mobile bọc trong div class="mobile-box"
-        st.markdown('<div class="mobile-box">', unsafe_allow_html=True)
-
-        # Nút chuyển đổi giao diện bọc trong lớp wrapper riêng biệt
-        st.markdown('<div class="mobile-btn-wrapper">', unsafe_allow_html=True)
-        if st.button("🔄 Đổi giao diện thiết bị", key="mobile_switch"):
-            st.session_state.device_layout = None
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        st.markdown(
-            "<h1 class='mobile-title'>🤖 AI FOOD SCANNER - MOBILE</h1>", unsafe_allow_html=True)
-        st.write("<p style='text-align: center; font-size: 13px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>", unsafe_allow_html=True)
-
-        st.subheader("📸 Quét Thực Phẩm")
-        image_file = st.camera_input("Chạm để chụp thực phẩm")
-
-        if image_file is not None:
-            pil_image = Image.open(image_file)
-            st.markdown(
-                '<p class="status-process">⏳ AI ĐANG KIỂM TRA... VUI LÒNG ĐỢI</p>', unsafe_allow_html=True)
-            with st.spinner("Đang xử lý..."):
-                ai_result = call_gemini_vision_api(
-                    pil_image, prompt_mode="mobile")
-
-            st.markdown("### 📋 KẾT QUẢ QUÉT ĐƯỢC:")
-            st.info(ai_result)
-            if "❌" in ai_result:
-                st.markdown(
-                    '<p class="status-warn">❌ LỖI - VUI LÒNG THỬ LẠI</p>', unsafe_allow_html=True)
-            elif any(word in ai_result.upper() for word in ["BẨN", "HỎNG", "ÔI", "THIU", "MỐC", "ĐỘC"]):
-                st.markdown(
-                    '<p class="status-warn">⚠️ CẢNH BÁO: CÓ DẤU HIỆU XẤU / HỎNG!</p>', unsafe_allow_html=True)
-            else:
-                st.markdown(
-                    '<p class="status-good">✅ AN TOÀN - THỰC PHẨM TƯƠI SẠCH</p>', unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
+        show_mobile(call_gemini_vision_api)
