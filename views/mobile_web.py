@@ -1,82 +1,69 @@
 # views/mobile_web.py
 import os
-import time
-from datetime import datetime
-from PIL import Image
 import streamlit as st
-from google import genai
+from PIL import Image
+from datetime import datetime
+
+# Giả sử hàm call_gemini_vision_api đã có sẵn hoặc bạn import vào đây
+# Nếu bạn để hàm đó ở file khác thì hãy đảm bảo import đúng nhé.
 
 
-def show_mobile(GEMINI_API_KEY):
-    # CSS Tối ưu đặc thù cho Mobile: Thu nhỏ padding màn hình, phóng to text status
+def show_mobile(GEMINI_API_KEY, call_gemini_vision_api):
+    # CSS CỰC MẠNH: Đè toàn bộ kích thước nút và camera
     st.markdown("""
         <style>
-        /* Giảm padding mặc định của Streamlit trên Mobile cho đỡ trống */
-        .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-        .main { background-color: #121212; color: #FFFFFF; }
-        
-        /* Chỉnh tiêu đề nhỏ gọn lại vừa màn hình dọc */
-        h1 { color: #00E676; font-size: 24px !important; text-align: center; font-weight: bold; margin-bottom: 5px; }
-        h3 { font-size: 18px !important; }
-        
-        .status-good { color: #00E676; font-weight: bold; font-size: 15px; text-align: center; }
-        .status-warn { color: #FF1744; font-weight: bold; font-size: 15px; text-align: center; }
-        .status-process { color: #FFB300; font-weight: bold; font-size: 15px; text-align: center; }
-        
-        /* Nút thiết kế lớn, dễ bấm bằng ngón tay */
-        div.stButton > button:first-child {
-            background-color: #00E676; color: black; border-radius: 12px; width: 100%; font-size: 16px; font-weight: bold; height: 55px;
+        /* 1. NÚT BẤM (SWITCH LAYOUT & NÚT CHỤP) */
+        div.stButton > button {
+            height: 70px !important;
+            font-size: 22px !important;
+            padding: 10px 20px !important;
+            width: 100% !important;
+            border-radius: 15px !important;
+            background-color: #2979FF !important;
+            color: white !important;
+            font-weight: bold !important;
+            border: none !important;
         }
-        /* Tối ưu khung camera gọn hơn trên màn hình đứng */
-        .stCameraInput { margin-top: -10px; }
+        
+        /* 2. CAMERA INPUT - PHÓNG TO CHIỀU CAO */
+        div[data-testid="stCameraInput"] {
+            width: 100% !important;
+            min-height: 450px !important; /* Phóng to camera lên tận 450px */
+            margin-bottom: 20px !important;
+        }
+        
+        /* Làm đẹp viền camera */
+        div[data-testid="stCameraInput"] > div {
+            border: 3px solid #2979FF !important;
+            border-radius: 20px !important;
+        }
+        
+        /* 3. ĐIỀU CHỈNH FONT CHỮ CHO DỄ ĐỌC */
+        h1, h2, h3 { color: #FFFFFF !important; }
+        .stMarkdown { font-size: 18px !important; }
+        
+        /* Xóa khoảng cách thừa */
+        .block-container { padding: 1rem !important; }
         </style>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-    st.title("📱 AI FOOD SCANNER - MOBILE")
-    st.write("<p style='text-align: center; font-size: 13px; color: #BBB;'>Nhấn nút bên dưới để mở Camera điện thoại</p>", unsafe_allow_html=True)
+    # Nút đổi giao diện (Đã to lên gấp 3 lần)
+    if st.button("⬅️ Quay về chọn thiết bị"):
+        st.session_state.device_layout = None
+        st.rerun()
 
-    def call_gemini_vision_api(image):
-        try:
-            client = genai.Client(api_key=GEMINI_API_KEY)
-            now = datetime.now()
-            current_time_str = now.strftime("%d/%m/%Y")
-            current_month = now.month
+    st.title("📸 Camera Scan")
 
-            prompt = (
-                f"Bạn là một chuyên gia kiểm định thực phẩm tại Việt Nam. Hôm nay là ngày: {current_time_str}.\n"
-                "Phân tích ảnh thực phẩm chụp từ camera điện thoại này và trả lời cực kỳ ngắn gọn, chủ yếu bằng gạch đầu dòng:\n\n"
-                "1. 👀 ĐÁNH GIÁ CHẤT LƯỢNG: Tên, Trạng thái, và Nhãn '[THỰC PHẨM SẠCH]' hoặc '[THỰC PHẨM HỎNG]'.\n"
-                f"2. 🍽️ GỢI Ý MÓN THEO MÙA: Gợi ý 2 món ăn phù hợp Tháng {current_month}.\n"
-                "3. 💡 LỜI KHUYÊN: Mẹo sơ chế hoặc nấu ăn nhanh."
-            )
-
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=[image, prompt]
-            )
-            return response.text if response.text else "❌ Lỗi phản hồi."
-        except Exception as e:
-            return f"❌ Lỗi: {str(e)}"
-
-    image_file = st.camera_input("Chụp thực phẩm")
+    # Camera giờ đã to như cái màn hình rồi
+    image_file = st.camera_input("Chạm vào nút bên dưới để chụp")
 
     if image_file is not None:
         pil_image = Image.open(image_file)
         st.markdown(
-            '<p class="status-process">⏳ ĐANG PHÂN TÍCH...</p>', unsafe_allow_html=True)
+            "<p style='text-align:center; font-size: 20px;'>⏳ Đang phân tích...</p>", unsafe_allow_html=True)
 
-        with st.spinner("Đang tính toán..."):
-            ai_result = call_gemini_vision_api(pil_image)
+        with st.spinner("AI đang xử lý ảnh..."):
+            ai_result = call_gemini_vision_api(pil_image, prompt_mode="mobile")
 
         st.markdown("### 📋 KẾT QUẢ:")
         st.info(ai_result)
-
-        if "❌" in ai_result:
-            st.markdown('<p class="status-warn">❌ LỖI HỆ THỐNG</p>',
-                        unsafe_allow_html=True)
-        elif any(word in ai_result.upper() for word in ["BẨN", "HỎNG", "ÔI", "THIU", "MỐC", "ĐỘC"]):
-            st.markdown(
-                '<p class="status-warn">⚠️ CẢNH BÁO: KHÔNG AN TOÀN!</p>', unsafe_allow_html=True)
-        else:
-            st.markdown(
-                '<p class="status-good">✅ THỰC PHẨM AN TOÀN</p>', unsafe_allow_html=True)
