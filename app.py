@@ -11,24 +11,25 @@ from google import genai
 from google.genai.errors import APIError
 from dotenv import load_dotenv
 
-# Tải cấu hình bảo mật từ file .env (Nếu chạy local)
+# Tải cấu hình bảo mật từ file .env
 load_dotenv()
 
 # Lấy API Key từ biến môi trường một cách an toàn
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not GEMINI_API_KEY:
-    st.error("❌ Không tìm thấy GEMINI_API_KEY. Vui lòng cấu hình Environment Variables trên Render hoặc kiểm tra file .env!")
+    st.error(
+        "❌ Không tìm thấy GEMINI_API_KEY. Vui lòng cấu hình trên Render hoặc kiểm tra file .env!")
     st.stop()
 
 # --- CẤU HÌNH GIAO DIỆN STREAMLIT CHUNG ---
 st.set_page_config(
     page_title="Hệ thống Kiểm tra Thực phẩm AI",
     page_icon="🥑",
-    layout="wide",  # Đảm bảo layout wide để kiểm soát CSS tốt hơn
+    layout="wide",
 )
 
-# Khởi tạo trạng thái chọn thiết bị của người dùng (nếu chưa có trong session)
+# Khởi tạo trạng thái chọn thiết bị
 if "device_layout" not in st.session_state:
     st.session_state.device_layout = None
 
@@ -74,7 +75,6 @@ def call_gemini_vision_api(image, prompt_mode="desktop"):
 
     max_retries = 3
     backoff_delay = 2
-
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
@@ -83,17 +83,16 @@ def call_gemini_vision_api(image, prompt_mode="desktop"):
             if not text:
                 try:
                     text = response.candidates[0].content
-                except Exception:
+                except:
                     text = None
             if text:
                 return text
             return "❌ Không nhận được phản hồi văn bản từ Gemini."
         except APIError as e:
-            if getattr(e, "code", None) == 503 or "demand" in str(e).lower() or "unavailable" in str(e).lower():
-                if attempt < max_retries - 1:
-                    time.sleep(backoff_delay)
-                    backoff_delay *= 2
-                    continue
+            if getattr(e, "code", None) == 503 or "demand" in str(e).lower():
+                time.sleep(backoff_delay)
+                backoff_delay *= 2
+                continue
             return f"❌ Lỗi kết nối Google API:\n{str(e)}"
         except Exception as e:
             return f"❌ Lỗi hệ thống khi gọi API:\n{str(e)}"
@@ -109,14 +108,9 @@ if st.session_state.device_layout is None:
         .welcome-title { color: #2979FF; font-family: 'Arial'; text-align: center; margin-top: 60px; font-weight: bold; }
         .welcome-sub { text-align: center; color: #aaaaaa; margin-bottom: 40px; font-size: 16px; }
         
-        /* CSS cho 2 nút chọn thiết bị ban đầu to rõ, đẹp mắt */
         .stButton > button {
             background-color: #1E1E1E !important; color: white !important; border: 2px solid #2979FF !important; border-radius: 12px !important; 
             width: 100% !important; font-size: 18px !important; font-weight: bold !important; height: 70px !important; margin-bottom: 15px !important;
-            transition: all 0.3s ease !important;
-        }
-        .stButton > button:hover {
-            background-color: #2979FF !important; color: white !important; border-color: #2979FF !important; transform: scale(1.02) !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -131,7 +125,6 @@ if st.session_state.device_layout is None:
         if st.button("💻 SỬ DỤNG TRÊN MÁY TÍNH / LAPTOP", use_container_width=True):
             st.session_state.device_layout = "desktop"
             st.rerun()
-
         if st.button("📱 SỬ DỤNG TRÊN ĐIỆN THOẠI / MOBILE", use_container_width=True):
             st.session_state.device_layout = "mobile"
             st.rerun()
@@ -142,7 +135,7 @@ if st.session_state.device_layout is None:
 # ========================================================
 else:
     # ----------------------------------------------------
-    # KIỂU A: GIAO DIỆN MÁY TÍNH (WEB LAPTOP) - CAMERA NHỎ LẠI
+    # KIỂU A: GIAO DIỆN MÁY TÍNH (LAPTOP) - CAMERA VỪA VẶN ĐẸP MẮT
     # ----------------------------------------------------
     if st.session_state.device_layout == "desktop":
         st.markdown("""
@@ -153,22 +146,25 @@ else:
             .status-warn { color: #FF1744; font-weight: bold; font-size: 18px; text-align: center; margin-top: 10px; }
             .status-process { color: #FFB300; font-weight: bold; font-size: 18px; text-align: center; margin-top: 10px; }
             
-            /* Nút đổi giao diện trên bản Desktop nhỏ gọn vừa phải ở góc */
-            .stButton > button {
+            /* Bọc CSS riêng cho khu vực Laptop tránh đè sang Mobile */
+            .desktop-container div.stButton > button {
                 background-color: #1E1E1E !important; color: #2979FF !important; border: 1px solid #2979FF !important;
                 border-radius: 8px !important; width: auto !important; padding: 5px 20px !important; height: 42px !important; font-size: 15px !important;
             }
             
-            /* THU NHỎ CAMERA BÊN LAPTOP: Giới hạn độ rộng tối đa và căn giữa */
-            div[data-testid="stCameraInput"] {
-                max-width: 550px !important;
+            /* CAMERA LAPTOP: Tăng kích thước vừa vặn tầm nhìn (800px) */
+            .desktop-container div[data-testid="stCameraInput"] {
+                max-width: 800px !important;
                 margin: 0 auto !important;
             }
-            div[data-testid="stCameraInput"] button {
+            .desktop-container div[data-testid="stCameraInput"] button {
                 background-color: #2979FF !important; color: white !important; border-radius: 8px !important;
             }
             </style>
             """, unsafe_allow_html=True)
+
+        # Toàn bộ nội dung bọc trong div class="desktop-container"
+        st.markdown('<div class="desktop-container">', unsafe_allow_html=True)
 
         if st.button("🔄 Đổi giao diện thiết bị", key="desktop_switch"):
             st.session_state.device_layout = None
@@ -184,14 +180,12 @@ else:
             pil_image = Image.open(image_file)
             st.markdown(
                 '<p class="status-process">⏳ AI ĐANG KIỂM ĐỊNH & LÊN THỰC ĐƠN... VUI LÒNG ĐỢI</p>', unsafe_allow_html=True)
-
             with st.spinner("Đang tính toán cùng Gemini..."):
                 ai_result = call_gemini_vision_api(
                     pil_image, prompt_mode="desktop")
 
             st.markdown("### 📋 KẾT QUẢ PHÂN TÍCH TỪ AI:")
             st.info(ai_result)
-
             if "❌" in ai_result:
                 st.markdown(
                     '<p class="status-warn">❌ LỖI HỆ THỐNG - VUI LÒNG THỬ LẠI</p>', unsafe_allow_html=True)
@@ -202,70 +196,69 @@ else:
                 st.markdown(
                     '<p class="status-good">✅ THỰC PHẨM ĐẠT TIÊU CHUẨN AN TOÀN</p>', unsafe_allow_html=True)
 
+        st.markdown('</div>', unsafe_allow_html=True)
+
     # ----------------------------------------------------
-    # KIỂU B: GIAO DIỆN ĐIỆN THOẠI - NÚT TO RÕ CHỮ, CAMERA PHÓNG TO
+    # KIỂU B: GIAO DIỆN ĐIỆN THOẠI (MOBILE) - FIX LỖI NÚT TO & CAMERA CAO ĐỨNG
     # ----------------------------------------------------
     elif st.session_state.device_layout == "mobile":
         st.markdown("""
             <style>
-            [data-testid="stAppViewContainer"] { padding-left: 10px !important; padding-right: 10px !important; }
-            .block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+            [data-testid="stAppViewContainer"] { padding-left: 8px !important; padding-right: 8px !important; }
+            .block-container { padding-top: 0.5rem !important; padding-bottom: 1rem !important; }
             .main { background-color: #121212; color: #FFFFFF; }
             
             .mobile-title { color: #2979FF; font-size: 24px !important; text-align: center; font-weight: bold; margin-bottom: 0px; }
             
-            /* SỬA NÚT ĐỔI GIAO DIỆN TRÊN MOBILE: Ép kích thước to lớn, rõ chữ, căn giữa màn hình */
-            .mobile-switch-box {
-                width: 100% !important;
-                text-align: center !important;
-                margin-bottom: 15px !important;
-            }
-            .mobile-switch-box button {
+            /* FIX NÚT ĐỔI GIAO DIỆN MOBILE: Độc lập hoàn toàn, to, rõ chữ, cao ráo */
+            .mobile-box .mobile-btn-wrapper div.stButton > button {
                 height: 55px !important;
-                width: 85% !important;
-                font-size: 17px !important;
+                width: 90% !important;
+                font-size: 16px !important;
                 font-weight: bold !important;
                 color: #2979FF !important;
                 background-color: #1E1E1E !important;
                 border: 2px solid #2979FF !important;
                 border-radius: 10px !important;
                 display: block !important;
-                margin: 0 auto !important;
+                margin: 0 auto 15px auto !important;
             }
             
-            /* PHÓNG TO CAMERA TRÊN MOBILE */
-            div[data-testid="stCameraInput"] {
+            /* CAMERA TRÊN MOBILE: Bung 100% chiều ngang, tăng chiều cao tối thiểu lên 480px */
+            .mobile-box div[data-testid="stCameraInput"] {
                 width: 100% !important;
                 max-width: 100% !important;
                 margin: 0px !important;
                 padding: 0px !important;
             }
-            /* Ép luồng phát video của camera kéo dài trục dọc */
-            div[data-testid="stCameraInput"] video {
+            .mobile-box div[data-testid="stCameraInput"] video {
                 object-fit: cover !important;
-                min-height: 440px !important;   /* Tăng hẳn chiều cao camera lên 440px để nhìn cực to */
+                min-height: 480px !important; /* Camera đứng cực kì cao ráo, rõ nét */
                 border-radius: 14px !important;
             }
-            div[data-testid="stCameraInput"] > div {
+            .mobile-box div[data-testid="stCameraInput"] > div {
                 border: 2.5px solid #2979FF !important;
                 border-radius: 16px !important;
             }
             
-            /* Nút chụp bên trong cụm camera trên Mobile */
-            div[data-testid="stCameraInput"] button {
+            /* Nút chụp ảnh bên trong cụm camera mobile */
+            .mobile-box div[data-testid="stCameraInput"] button {
                 background-color: #2979FF !important; color: white !important;
                 border-radius: 8px !important; width: 100% !important;
-                font-weight: bold !important; height: 48px !important; font-size: 16px !important;
+                font-weight: bold !important; height: 50px !important; font-size: 16px !important;
             }
             
-            .status-good { color: #00E676; font-weight: bold; font-size: 16px; text-align: center; margin-top: 10px; }
-            .status-warn { color: #FF1744; font-weight: bold; font-size: 16px; text-align: center; margin-top: 10px; }
-            .status-process { color: #FFB300; font-weight: bold; font-size: 16px; text-align: center; margin-top: 10px; }
+            .status-good { color: #00E676; font-weight: bold; font-size: 15px; text-align: center; margin-top: 10px; }
+            .status-warn { color: #FF1744; font-weight: bold; font-size: 15px; text-align: center; margin-top: 10px; }
+            .status-process { color: #FFB300; font-weight: bold; font-size: 15px; text-align: center; margin-top: 10px; }
             </style>
             """, unsafe_allow_html=True)
 
-        # Đặt nút đổi giao diện vào một container custom riêng để ăn theo CSS độc lập
-        st.markdown('<div class="mobile-switch-box">', unsafe_allow_html=True)
+        # Toàn bộ nội dung mobile bọc trong div class="mobile-box"
+        st.markdown('<div class="mobile-box">', unsafe_allow_html=True)
+
+        # Nút chuyển đổi giao diện bọc trong lớp wrapper riêng biệt
+        st.markdown('<div class="mobile-btn-wrapper">', unsafe_allow_html=True)
         if st.button("🔄 Đổi giao diện thiết bị", key="mobile_switch"):
             st.session_state.device_layout = None
             st.rerun()
@@ -273,7 +266,7 @@ else:
 
         st.markdown(
             "<h1 class='mobile-title'>🤖 AI FOOD SCANNER - MOBILE</h1>", unsafe_allow_html=True)
-        st.write("<p style='text-align: center; font-size: 14px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>", unsafe_allow_html=True)
+        st.write("<p style='text-align: center; font-size: 13px; color: #cccccc; margin-top:5px; margin-bottom:15px;'>Mở camera, chụp thực phẩm để quét nhanh.</p>", unsafe_allow_html=True)
 
         st.subheader("📸 Quét Thực Phẩm")
         image_file = st.camera_input("Chạm để chụp thực phẩm")
@@ -282,14 +275,12 @@ else:
             pil_image = Image.open(image_file)
             st.markdown(
                 '<p class="status-process">⏳ AI ĐANG KIỂM TRA... VUI LÒNG ĐỢI</p>', unsafe_allow_html=True)
-
             with st.spinner("Đang xử lý..."):
                 ai_result = call_gemini_vision_api(
                     pil_image, prompt_mode="mobile")
 
             st.markdown("### 📋 KẾT QUẢ QUÉT ĐƯỢC:")
             st.info(ai_result)
-
             if "❌" in ai_result:
                 st.markdown(
                     '<p class="status-warn">❌ LỖI - VUI LÒNG THỬ LẠI</p>', unsafe_allow_html=True)
@@ -299,3 +290,5 @@ else:
             else:
                 st.markdown(
                     '<p class="status-good">✅ AN TOÀN - THỰC PHẨM TƯƠI SẠCH</p>', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
